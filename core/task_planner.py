@@ -119,6 +119,7 @@ class TaskPlanner:
         intent: Intent,
         user_message: str,
         conversation_history: Optional[list[dict]] = None,
+        event_callback: Optional[callable] = None,
     ) -> PlannerResult:
         graph = self.build_graph(intent)
         start = time.monotonic()
@@ -130,6 +131,8 @@ class TaskPlanner:
         for level in execution_levels:
             for node in level:
                 node.status = 'running'
+                if event_callback:
+                    event_callback({'type': 'agent_start', 'step': node.step, 'agent': node.agent})
 
                 dep_context = ''
                 if node.depends_on:
@@ -173,12 +176,16 @@ class TaskPlanner:
                         'Step %d (%s) completed in %.0fms.',
                         node.step, node.agent, node.latency_ms,
                     )
+                    if event_callback:
+                        event_callback({'type': 'agent_done', 'step': node.step, 'agent': node.agent, 'latency_ms': node.latency_ms})
 
                 except Exception as e:
                     node.status = 'failed'
                     node.error = str(e)
                     node_results[node.step] = f'[ERROR: {e}]'
                     logger.error('Step %d (%s) failed: %s', node.step, node.agent, e)
+                    if event_callback:
+                        event_callback({'type': 'agent_error', 'step': node.step, 'agent': node.agent, 'error': str(e)})
 
         graph.total_latency_ms = (time.monotonic() - start) * 1000
         graph.status = 'done' if all(n.status == 'done' for n in graph.nodes) else 'partial'

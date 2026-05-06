@@ -18,6 +18,8 @@ from memory.memory_manager import MemoryManager
 logger = logging.getLogger(__name__)
 
 CONFIG_DIR = Path(__file__).parent.parent / 'config'
+SESSIONS_DIR = Path(__file__).parent.parent / 'sessions'
+SESSIONS_DIR.mkdir(exist_ok=True)
 
 
 class ConductorResponse(BaseModel):
@@ -72,7 +74,12 @@ class Conductor:
         if not self._memory:
             return ''
         try:
-            context = self._memory.retrieve(query=query, layers=['episodic', 'relational'], top_k=3)
+            context = self._memory.retrieve(
+                query=query, 
+                layers=['episodic', 'relational'], 
+                top_k=3,
+                session_filter=self._session_id
+            )
             return self._memory.format_context_for_prompt(context)
         except Exception as e:
             logger.error('Conductor memory retrieval failed: %s', e)
@@ -135,11 +142,13 @@ class Conductor:
         greetings = {'hi', 'hello', 'hey', 'sup', 'yo', 'good morning', 'good evening', 'good afternoon'}
         return message.lower().strip().rstrip('!.') in greetings
 
-    def chat(self, user_message: str) -> ConductorResponse:
+    def chat(self, user_message: str, event_callback: Optional[callable] = None) -> ConductorResponse:
         start = time.monotonic()
         self._turn_index += 1
 
         if self._is_simple_greeting(user_message):
+            if event_callback:
+                event_callback({'type': 'instant'})
             memory_context = self._retrieve_memory_context(user_message)
 
             messages = [{'role': 'system', 'content': self._personality}]
@@ -177,19 +186,25 @@ class Conductor:
             'Intent: primary=%s, multi_agent=%s, chain=%d steps',
             intent.primary, intent.requires_multi_agent, len(intent.task_chain),
         )
+        if event_callback:
+            event_callback({'type': 'intent_parsed', 'intent': intent.model_dump()})
 
         if intent.requires_multi_agent:
             planner_result = self._task_planner.execute(
                 intent=intent,
                 user_message=user_message,
                 conversation_history=self._conversation_history[-6:],
+                event_callback=event_callback,
             )
+            if event_callback:
+                event_callback({'type': 'synthesizing'})
             content = self._synthesize_response(user_message, planner_result)
         else:
             planner_result = self._task_planner.execute(
                 intent=intent,
                 user_message=user_message,
                 conversation_history=self._conversation_history[-6:],
+                event_callback=event_callback,
             )
             content = planner_result.final_output
 
@@ -208,6 +223,88 @@ class Conductor:
             latency_ms=elapsed,
             model=self._model,
         )
+
+    def _persist_session(self, title: Optional[str] = None) -> None:
+        """Write current session to disk."""
+        path = SESSIONS_DIR / f'{self._session_id}.json'
+        existing_title = title
+        if path.exists() and not title:
+            try:
+                existing_title = json.loads(path.read_text())['title']
+            except Exception:
+                pass
+        data = {
+            'id': self._session_id,
+            'title': existing_title or 'New session',
+            'created_at': path.stat().st_ctime if path.exists() else time.time(),
+            'updated_at': time.time(),
+            'turn_index': self._turn_index,
+            'history': self._conversation_history,
+        }
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
+
+    def save_session(self, messages: list[dict], title: Optional[str] = None) -> dict:
+        """Persist session with UI messages. Called from the API after each turn."""
+        path = SESSIONS_DIR / f'{self._session_id}.json'
+        existing: dict = {}
+        if path.exists():
+            try:
+                existing = json.loads(path.read_text())
+            except Exception:
+                pass
+        if not title:
+            # Derive title from first user message
+            for m in messages:
+                if m.get('role') == 'user' and m.get('content'):
+                    title = m['content'][:60]
+                    break
+        data = {
+            'id': self._session_id,
+            'title': title or existing.get('title', 'New session'),
+            'created_at': existing.get('created_at', time.time()),
+            'updated_at': time.time(),
+            'turn_index': self._turn_index,
+            'history': self._conversation_history,
+            'messages': messages,
+        }
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
+        return data
+
+    def load_session(self, session_id: str) -> dict:
+        """Restore a previous session into the conductor."""
+        path = SESSIONS_DIR / f'{session_id}.json'
+        if not path.exists():
+            raise FileNotFoundError(f'Session not found: {session_id}')
+        data = json.loads(path.read_text())
+        self._session_id = data['id']
+        self._turn_index = data.get('turn_index', 0)
+        self._conversation_history = data.get('history', [])
+        logger.info('Session loaded: %s (%d turns)', session_id, self._turn_index)
+        return data
+
+    @staticmethod
+    def list_sessions() -> list[dict]:
+        """Return all saved sessions sorted by updated_at descending."""
+        sessions = []
+        for path in SESSIONS_DIR.glob('*.json'):
+            try:
+                data = json.loads(path.read_text())
+                sessions.append({
+                    'id': data['id'],
+                    'title': data.get('title', 'Untitled'),
+                    'created_at': data.get('created_at', 0),
+                    'updated_at': data.get('updated_at', 0),
+                    'turn_index': data.get('turn_index', 0),
+                    'preview': (data.get('messages') or [{}])[-1].get('content', '')[:80],
+                })
+            except Exception:
+                pass
+        return sorted(sessions, key=lambda s: s['updated_at'], reverse=True)
+
+    def delete_session(self, session_id: str) -> None:
+        path = SESSIONS_DIR / f'{session_id}.json'
+        if path.exists():
+            path.unlink()
 
     def reset_session(self) -> str:
         self._session_id = str(uuid.uuid4())[:8]

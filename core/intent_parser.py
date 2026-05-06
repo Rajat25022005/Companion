@@ -25,8 +25,8 @@ INTENT_TYPES = {
         'description': 'Long-form writing, editing, summarization',
     },
     'document': {
-        'keywords': ['pdf', 'docx', 'pptx', 'presentation', 'slides', 'report', 'document', 'powerpoint', 'word doc'],
-        'description': 'Document generation: PDF, DOCX, PPTX',
+        'keywords': ['create pdf', 'generate docx', 'make a presentation', 'make slides', 'write a report', 'create document', 'export to pdf'],
+        'description': 'Document generation and creation: building new PDFs, DOCX, or PPTX files',
     },
     'email': {
         'keywords': ['email', 'mail', 'inbox', 'reply', 'send', 'compose email', 'draft email', 'follow up'],
@@ -35,6 +35,14 @@ INTENT_TYPES = {
     'plan': {
         'keywords': ['plan', 'schedule', 'roadmap', 'breakdown', 'tasks', 'timeline', 'prioritize', 'organize', 'todo'],
         'description': 'Project planning, task decomposition, scheduling',
+    },
+    'file_reading': {
+        'keywords': ['read', 'parse', 'extract', 'file', 'resume', 'cv', 'pdf', 'docx', 'csv', 'document content', 'text from'],
+        'description': 'Reading and extracting content from files (PDF, DOCX, CSV, etc.)',
+    },
+    'frontend_design': {
+        'keywords': ['ui', 'ux', 'frontend', 'react', 'css', 'tailwind', 'component', 'styling', 'layout', 'design'],
+        'description': 'Frontend component design, CSS, UI/UX tasks',
     },
 }
 

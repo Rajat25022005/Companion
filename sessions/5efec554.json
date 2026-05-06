@@ -1,0 +1,27 @@
+{
+  "id": "5efec554",
+  "title": "**bold** and *italic*",
+  "created_at": 1778068064.7813,
+  "updated_at": 1778068075.050684,
+  "turn_index": 1,
+  "history": [
+    {
+      "role": "user",
+      "content": "**bold** and *italic*"
+    },
+    {
+      "role": "assistant",
+      "content": "**Markdown**\n\n- *Italic*: wrap the text in single asterisks (`*`) or underscores (`_`).  \n  ```markdown\n  *italic*   // or   _italic_\n  ```\n- **Bold**: wrap the text in double asterisks (`**`) or double underscores (`__`).  \n  ```markdown\n  **bold**   // or   __bold__\n  ```\n- ***Bold + italic***: triple asterisks (or underscores).  \n  ```markdown\n  ***bold italic***   // or   ___bold italic___\n  ```\n\n**HTML**\n\n- *Italic*: `<em>italic</em>` or `<i>italic</i>`\n- **Bold**: `<strong>bold</strong>` or `<b>bold</b>`\n- **Bold + italic**: `<strong><em>bold italic</em></strong>`\n\n**Rendered examples**\n\n- *italic*\n- **bold**\n- ***bold italic***"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "**bold** and *italic*"
+    },
+    {
+      "role": "assistant",
+      "content": ""
+    }
+  ]
+}

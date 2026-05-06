@@ -1,5 +1,8 @@
 # Context Protocol
 
+> **INFRASTRUCTURE FILE — DO NOT INJECT INTO AGENT SYSTEM PROMPTS.**
+> This file is read by your orchestration code, not by the model. Including it in a system prompt wastes ~400 tokens and causes the model to try to follow assembly instructions that were meant for your code.
+
 How Companion manages context injection across the system. This file defines the rules for assembling the system prompt that every agent sees.
 
 ## Prompt Assembly Order
@@ -19,7 +22,7 @@ When any agent is invoked, its system prompt is assembled in this exact order:
 
 ## Truncation Rules
 
-Context windows are limited. When truncation is necessary, this is the priority order (highest to lowest — cut from the bottom first):
+Context windows are limited. When truncation is necessary, cut from the bottom first:
 
 1. **Never cut**: soul.md, boundaries.md
 2. **Cut last**: voice.md, the active skill file
@@ -42,11 +45,11 @@ For agents with 16384-token context (research, code), double the memory and conv
 
 ## Specialist vs. Conductor Context
 
-### Conductor (Gemma 3 / Llama 3.1)
-Gets the full personality stack: soul + voice + boundaries + relationship + quirks. The Conductor is the voice the user hears, so it needs the complete personality.
+### Conductor
+Gets the full personality stack: soul + voice + boundaries + relationship + quirks.
 
-### Specialist Agents (DeepSeek, Qwen-Coder, Qwen)
-Get: soul + voice + boundaries + their specific skill file. They don't get relationship.md or quirks.md — those are Conductor-only concerns. Specialists focus on task execution, not personality.
+### Specialist Agents
+Get: soul + voice + boundaries + their specific skill file. Not relationship.md or quirks.md.
 
 ## Memory Injection Format
 
@@ -66,7 +69,6 @@ When memory context is injected into the prompt, it follows this format:
 [Relational]
 - Hypnos (Project) --USES--> Mamba (Framework)
 - Hypnos (Project) --TARGETS--> NeurIPS (Event)
-- Companion (Project) --USES--> LangGraph (Framework)
 
 --- END MEMORY CONTEXT ---
 ```
@@ -77,5 +79,3 @@ At the start of each new session:
 1. Load the last 3 episodic entries to establish continuity
 2. Check relational memory for any active projects with approaching deadlines
 3. If the last session ended mid-task, proactively surface the unfinished context
-
-This gives Companion the "picking up where we left off" quality that distinguishes it from stateless systems.

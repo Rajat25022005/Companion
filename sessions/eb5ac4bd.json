@@ -1,0 +1,30 @@
+{
+  "id": "eb5ac4bd",
+  "title": "**bold** and *italic*",
+  "created_at": 1778068165.49634,
+  "updated_at": 1778068173.148648,
+  "turn_index": 1,
+  "history": [
+    {
+      "role": "user",
+      "content": "**bold** and *italic*"
+    },
+    {
+      "role": "assistant",
+      "content": "**Bold**\n\n- Syntax: `**text**` or `__text__`\n- Renders as **text**\n\n**Italic**\n\n- Syntax: `*text*` or `_text_`\n- Renders as *text*\n\n**Combined bold + italic**\n\n- Syntax: `***text***` or `___text___`\n- Renders as ***text***\n\n**Examples**\n\n```markdown\n**Bold only**          → **Bold only**\n*Italic only*          → *Italic only*\n***Bold + italic***    → ***Bold + italic***\n```\n\n**Escaping**\n\nIf you need the literal asterisks or underscores, prepend a backslash:\n\n```markdown\n\\*not italic\\*   → *not italic*\n\\**not bold\\**   → **not bold**\n```"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "**bold** and *italic*"
+    },
+    {
+      "role": "assistant",
+      "content": "**Bold**\n\n- Syntax: `**text**` or `__text__`\n- Renders as **text**\n\n**Italic**\n\n- Syntax: `*text*` or `_text_`\n- Renders as *text*\n\n**Combined bold + italic**\n\n- Syntax: `***text***` or `___text___`\n- Renders as ***text***\n\n**Examples**\n\n```markdown\n**Bold only**          → **Bold only**\n*Italic only*          → *Italic only*\n***Bold + italic***    → ***Bold + italic***\n```\n\n**Escaping**\n\nIf you need the literal asterisks or underscores, prepend a backslash:\n\n```markdown\n\\*not italic\\*   → *not italic*\n\\**not bold\\**   → **not bold**\n```",
+      "intent": "write",
+      "latency_ms": 7669.803334167227,
+      "files": []
+    }
+  ]
+}

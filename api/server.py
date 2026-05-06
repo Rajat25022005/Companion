@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -74,6 +74,71 @@ class StatsResponse(BaseModel):
     memory: dict = Field(default_factory=dict)
 
 
+import asyncio
+import uuid
+from fastapi.responses import StreamingResponse
+import json
+
+active_tasks: dict[str, asyncio.Queue] = {}
+
+class AsyncChatResponse(BaseModel):
+    task_id: str
+
+
+@app.post('/chat/async', response_model=AsyncChatResponse)
+async def chat_async_endpoint(request: ChatRequest):
+    conductor = get_conductor()
+    task_id = str(uuid.uuid4())
+    queue = asyncio.Queue()
+    active_tasks[task_id] = queue
+    loop = asyncio.get_running_loop()
+
+    def event_callback(event_data: dict):
+        loop.call_soon_threadsafe(queue.put_nowait, event_data)
+
+    def run_chat():
+        try:
+            event_callback({'type': 'task_start', 'task_id': task_id})
+            result = conductor.chat(request.message, event_callback=event_callback)
+            event_callback({
+                'type': 'complete',
+                'content': result.content,
+                'intent': result.intent.primary if result.intent else None,
+                'latency_ms': result.latency_ms,
+                'model': result.model,
+            })
+        except Exception as e:
+            logger.error('Chat async failed: %s', e)
+            event_callback({'type': 'error', 'error': str(e)})
+        finally:
+            loop.call_soon_threadsafe(queue.put_nowait, None) # EOF marker
+
+    # Run in background thread so we don't block the event loop
+    asyncio.create_task(asyncio.to_thread(run_chat))
+
+    return AsyncChatResponse(task_id=task_id)
+
+
+@app.get('/tasks/{task_id}/stream')
+async def stream_task(task_id: str):
+    if task_id not in active_tasks:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    queue = active_tasks[task_id]
+
+    async def event_generator():
+        try:
+            while True:
+                event = await queue.get()
+                if event is None:
+                    break
+                yield f"data: {json.dumps(event)}\n\n"
+        finally:
+            if task_id in active_tasks:
+                del active_tasks[task_id]
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
 @app.post('/chat', response_model=ChatResponse)
 async def chat(request: ChatRequest):
     conductor = get_conductor()
@@ -104,11 +169,96 @@ async def index_documents(request: IndexRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post('/upload')
+async def upload_file(file: UploadFile = File(...)):
+    """Save an uploaded file to the workspace and automatically index it."""
+    get_conductor()  # Ensure memory is initialized
+    
+    file_path = WORKSPACE_DIR / file.filename
+    # Save the file to disk
+    with open(file_path, "wb") as f:
+        f.write(await file.read())
+        
+    stats = {}
+    if _memory:
+        try:
+            # We index the specific file by passing its parent directory, but memory manager
+            # index_documents expects a directory. 
+            # We should probably modify index_documents to accept a file or just index the whole workspace.
+            # For simplicity, we just index the workspace non-recursively.
+            stats = _memory.index_documents(str(WORKSPACE_DIR), recursive=False)
+        except Exception as e:
+            logger.warning(f"Failed to auto-index uploaded file {file.filename}: {e}")
+            
+    return {
+        "filename": file.filename,
+        "path": f"/files/{file.filename}",
+        "size": file_path.stat().st_size,
+        "indexed": bool(stats),
+        "stats": stats
+    }
+
+
 @app.post('/reset')
 async def reset_session():
     conductor = get_conductor()
     new_id = conductor.reset_session()
     return {'session_id': new_id, 'status': 'reset'}
+
+
+# ── Session persistence ────────────────────────────────────────────────────────
+
+class SaveSessionRequest(BaseModel):
+    messages: list[dict]
+    title: Optional[str] = None
+
+
+@app.get('/sessions')
+async def list_sessions():
+    return {'sessions': get_conductor().list_sessions()}
+
+
+@app.post('/sessions/{session_id}/save')
+async def save_session(session_id: str, request: SaveSessionRequest):
+    conductor = get_conductor()
+    # Switch to this session id if it matches current, otherwise ignore
+    if conductor.session_id != session_id:
+        # Non-active session save — load it first, save, then restore current
+        current_id = conductor.session_id
+        try:
+            conductor.load_session(session_id)
+        except FileNotFoundError:
+            pass
+        result = conductor.save_session(request.messages, request.title)
+        # Restore to original active session
+        try:
+            conductor.load_session(current_id)
+        except Exception:
+            pass
+        return result
+    return conductor.save_session(request.messages, request.title)
+
+
+@app.post('/sessions/{session_id}/load')
+async def load_session(session_id: str):
+    conductor = get_conductor()
+    try:
+        data = conductor.load_session(session_id)
+        return {
+            'session_id': data['id'],
+            'title': data.get('title', ''),
+            'messages': data.get('messages', []),
+        }
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail='Session not found')
+
+
+@app.delete('/sessions/{session_id}')
+async def delete_session(session_id: str):
+    get_conductor().delete_session(session_id)
+    return {'status': 'deleted'}
+
+
 
 
 @app.get('/stats', response_model=StatsResponse)

@@ -1,0 +1,61 @@
+Rajat Malik
+rajatmalik5039@gmail.com | +91-8168913012 | github.com/Rajat25022005 | linkedin.com/in/rajat-malik |
+huggingface.co/rajat5039
+PROFESSIONAL SUMMARY
+Final-year B.E. (AI & ML) student at Chandigarh University with a strong foundation in building real-world AI applications —
+from autonomous email agents and multimodal research engines to collaborative platforms with semantic memory.
+Experienced in LLM orchestration, privacy-first local inference, and full-stack deployment. Proven ability to ship under
+constraints with a focus on performance, security, and reproducibility.
+EDUCATION
+Chandigarh UniversityJun 2023 – Jun 2027
+B.E. — Computer Science (AI & ML) | CGPA: 7.6 / 10.0Mohali, Punjab, India
+Relevant Coursework: Machine Learning, Deep Learning, DSA, Operating Systems, DBMS, Computer Networks, NLP
+SKILLS SUMMARY
+Languages: Python, TypeScript, JavaScript (ES6+), SQL, AI / ML: Latent Reasoning, JEPA, Agentic Systems, RAG,
+C++ GraphRAG
+LLM & Inference: Ollama, GGUF Quantisation, LangChain, Frameworks: React.js, Node.js, FastAPI, Flask, Socket.IO,
+LangGraph, HuggingFace PyTorch, TensorFlow
+Databases: Neo4j, ChromaDB, Pinecone, FAISS, Qdrant, Tools: Docker, GCP (Compute Engine, App Engine,
+MongoDB Firebase), Git, CI/CD
+Soft Skills: Technical Leadership · Cross-functional Collaboration · Problem-solving Under Pressure · Research
+Communication · Ownership Mindset · Adaptability
+EXPERIENCE
+EDSHODH LLPJun 2025 – Dec 2025
+Python Developer Intern (Full-time)Remote
+• Architected autonomous AI agents for internal process automation using LangChain; owned end-to-end pipeline design
+from prompt engineering to evaluation and deployment.
+• Optimised Python inference scripts for edge deployment via GGUF quantisation and Ollama, reducing latency by 80%
+(2.0 s → 400 ms) — the primary performance metric for the system.
+• Developed secure Flask API endpoints serving local LLM responses with 100% on-device execution; integrated OAuth
+2.0 and request logging for compliance with sensitive client data handling requirements.
+PROJECTS
+think-in-silence2024 – 2025
+PyTorch · Transformers · HuggingFace · Python
+• Designed a latent reasoning architecture performing K recurrent cross-attention steps entirely in embedding space —
+no chain-of-thought tokens, no RL training, no reasoning traces at inference time.
+• Achieves BLEU 0.231 / ROUGE-1 0.594 at K=8 (2.1× over K=1 baseline) on multi-hop QA; validates K-scaling
+hypothesis with novel evidence of learned iterative computation.
+• Engineered 553K-row synthetic QA dataset via Gemini 2.5 Flash; 3-stage JEPA-style MSE + cosine EMA training;
+published 1.55 GB model to HuggingFace for full reproducibility.
+Nexus Workplace AI2024
+React · Node.js · Socket.IO · GCP · Docker · Firebase · Pinecone
+• Full-stack real-time collaboration platform with an agentic AI assistant maintaining workspace-level semantic memory
+across sessions via a RAG pipeline (Pinecone / Mongo Vector).
+• Deployed on GCP with GPU-enabled Compute Engine VMs; IAM-secured multi-tenant access; containerised via Docker
+with CI/CD pipeline for zero-downtime releases.
+Privacy-First Autonomous Email Agent2024
+Python · Gmail API · Ollama · Gemma 2 (9B) · OAuth 2.0 · Docker
+• Fully local email automation using Gemma 2 (9B) via Ollama + RAG; cross-references Google Calendar API before
+drafting responses — zero cloud data transmission.
+• OAuth 2.0 CLI Human-in-the-Loop verification before every send; containerised via Docker for cross-environment
+reproducibility.
+Visual Deep Research2025
+Python · LangGraph · LLaVA · Neo4j · ChromaDB · OCR
+• Multimodal autonomous research engine extending text-only deep research to process charts, diagrams, and paper
+figures using Vision Transformers and LLaVA via Ollama.
+• Cross-modal RAG: ChromaDB dense retrieval + Neo4j knowledge graph, orchestrated via LangGraph for multi-step
+agentic workflows with OCR preprocessing and iterative knowledge synthesis.
+CERTIFICATIONS
+• TensorFlow 2.0: Deep Learning — Udemy | Neural Networks, CNNs, RNNs, Transfer Learning
+• Microsoft AI Fundamentals (AI-900) — Microsoft | ML Concepts, Azure Cognitive Services, Responsible AI
+• Generative AI Professional Series — LinkedIn Learning | Prompt Engineering, LLM Workflows, GenAI Applications
