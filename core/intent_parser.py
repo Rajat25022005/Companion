@@ -44,6 +44,10 @@ INTENT_TYPES = {
         'keywords': ['ui', 'ux', 'frontend', 'react', 'css', 'tailwind', 'component', 'styling', 'layout', 'design'],
         'description': 'Frontend component design, CSS, UI/UX tasks',
     },
+    'design': {
+        'keywords': ['image', 'generate image', 'picture', 'draw', 'photo', 'illustration', 'sketch', 'create image', 'visualization'],
+        'description': 'Image generation and visual design using Gemini Imagen',
+    },
 }
 
 

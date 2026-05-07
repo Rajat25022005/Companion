@@ -195,6 +195,7 @@ class Conductor:
                 user_message=user_message,
                 conversation_history=self._conversation_history[-6:],
                 event_callback=event_callback,
+                session_id=self._session_id,
             )
             if event_callback:
                 event_callback({'type': 'synthesizing'})
@@ -205,6 +206,7 @@ class Conductor:
                 user_message=user_message,
                 conversation_history=self._conversation_history[-6:],
                 event_callback=event_callback,
+                session_id=self._session_id,
             )
             content = planner_result.final_output
 

@@ -1,5 +1,5 @@
 conductor:
-  model: gpt-oss:120b-cloud
+  model: gemma4:31b-cloud
   temperature: 0.8
   context_length: 128000
 
@@ -14,10 +14,14 @@ code:
   context_length: 256000
 
 writer:
-  model: gpt-oss:120b-cloud
+  model: gemma4:31b-cloud
   temperature: 0.7
-  context_length: 128000
+  context_length: 256000
 
 embeddings:
   model: nomic-embed-text
   dimensions: 768
+
+design:
+  model: gemma4:31b-cloud
+  image_model: imagen-4.0-generate-001

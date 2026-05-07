@@ -120,6 +120,7 @@ class BaseAgent(ABC):
                 query=query,
                 layers=self.memory_layers,
                 top_k=top_k,
+                session_filter=getattr(self, '_current_session_id', '')
             )
             return self._memory.format_context_for_prompt(context)
         except Exception as e:
@@ -258,8 +259,10 @@ class BaseAgent(ABC):
         user_message: str,
         conversation_history: Optional[list[dict]] = None,
         extra_context: str = '',
+        session_id: str = '',
     ) -> AgentResponse:
         start = time.monotonic()
+        self._current_session_id = session_id
 
         memory_context = self._retrieve_memory(user_message)
         system_prompt = self._build_system_prompt(memory_context)

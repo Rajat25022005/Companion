@@ -88,6 +88,11 @@ class AsyncChatResponse(BaseModel):
 @app.post('/chat/async', response_model=AsyncChatResponse)
 async def chat_async_endpoint(request: ChatRequest):
     conductor = get_conductor()
+    if request.session_id and conductor.session_id != request.session_id:
+        try:
+            conductor.load_session(request.session_id)
+        except Exception as e:
+            logger.warning('Could not load session %s: %s', request.session_id, e)
     task_id = str(uuid.uuid4())
     queue = asyncio.Queue()
     active_tasks[task_id] = queue

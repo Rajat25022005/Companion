@@ -177,7 +177,12 @@ class ResearchAgent(BaseAgent):
         def search(query: str, top_k: int = 5) -> str:
             """Search past conversation history for relevant context."""
             try:
-                context = memory.retrieve(query=query, layers=['episodic'], top_k=top_k)
+                context = memory.retrieve(
+                    query=query, 
+                    layers=['episodic'], 
+                    top_k=top_k,
+                    session_filter=getattr(self, '_current_session_id', '')
+                )
                 results = [
                     {'content': e.get('content', '')[:200], 'response': e.get('response', '')[:200], 'timestamp': e.get('timestamp', '')}
                     for e in context.episodic

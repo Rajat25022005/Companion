@@ -10,6 +10,7 @@ from agents.research_agent import ResearchAgent
 from agents.code_agent import CodeAgent
 from agents.writer_agent import WriterAgent
 from agents.doc_agent import DocAgent
+from agents.design_agent import DesignAgent
 from core.intent_parser import Intent
 from memory.memory_manager import MemoryManager
 
@@ -44,6 +45,7 @@ AGENT_REGISTRY = {
     'code': CodeAgent,
     'write': WriterAgent,
     'document': DocAgent,
+    'design': DesignAgent,
 }
 
 
@@ -120,6 +122,7 @@ class TaskPlanner:
         user_message: str,
         conversation_history: Optional[list[dict]] = None,
         event_callback: Optional[callable] = None,
+        session_id: str = '',
     ) -> PlannerResult:
         graph = self.build_graph(intent)
         start = time.monotonic()
@@ -156,6 +159,7 @@ class TaskPlanner:
                     response = agent.run(
                         user_message=task_message,
                         conversation_history=conversation_history,
+                        session_id=session_id,
                     )
                     node.latency_ms = (time.monotonic() - node_start) * 1000
 
