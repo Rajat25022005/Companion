@@ -1,4 +1,7 @@
 import logging
+import threading
+import time
+from collections import OrderedDict
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -11,6 +14,36 @@ from memory.semantic import SemanticMemory, SemanticResult
 logger = logging.getLogger(__name__)
 
 VALID_LAYERS = {'episodic', 'semantic', 'relational'}
+
+
+class _EmbeddingCache:
+    """Thread-safe LRU cache for embedding vectors."""
+    def __init__(self, embed_fn, maxsize: int = 64, ttl: float = 300.0):
+        self._embed_fn = embed_fn
+        self._maxsize = maxsize
+        self._ttl = ttl
+        self._cache: OrderedDict[str, tuple[list[float], float]] = OrderedDict()
+        self._lock = threading.Lock()
+
+    def __call__(self, text: str) -> list[float]:
+        now = time.monotonic()
+        # Normalize whitespace for cache key
+        key = text.strip()[:2000]
+        with self._lock:
+            if key in self._cache:
+                vec, ts = self._cache[key]
+                if now - ts < self._ttl:
+                    self._cache.move_to_end(key)
+                    return vec
+                else:
+                    del self._cache[key]
+        # Cache miss — compute
+        vec = self._embed_fn(text)
+        with self._lock:
+            self._cache[key] = (vec, now)
+            if len(self._cache) > self._maxsize:
+                self._cache.popitem(last=False)
+        return vec
 
 
 class MemoryContext(BaseModel):
@@ -30,21 +63,35 @@ class MemoryManager:
         neo4j_password: str = 'companion',
         embedding_fn: Optional[callable] = None,
     ):
-        self._embed = embedding_fn
+        # Wrap embedding function with cache to avoid redundant Ollama calls
+        self._raw_embed = embedding_fn
+        self._embed = _EmbeddingCache(embedding_fn) if embedding_fn else None
         self._episodic = EpisodicMemory(
             qdrant_url=qdrant_url,
-            embedding_fn=embedding_fn,
+            embedding_fn=self._embed,
         )
         self._semantic = SemanticMemory(
             qdrant_url=qdrant_url,
-            embedding_fn=embedding_fn,
+            embedding_fn=self._embed,
         )
-        self._relational = RelationalMemory(
-            uri=neo4j_uri,
-            user=neo4j_user,
-            password=neo4j_password,
-        )
-        logger.info('MemoryManager initialized with all three layers.')
+
+        # Relational layer with circuit breaker
+        self._relational_available = True
+        try:
+            self._relational = RelationalMemory(
+                uri=neo4j_uri,
+                user=neo4j_user,
+                password=neo4j_password,
+            )
+        except Exception as e:
+            logger.warning('Neo4j unavailable, disabling relational memory: %s', e)
+            self._relational = None
+            self._relational_available = False
+
+        # Cache layer emptiness to skip unnecessary queries
+        self._layer_counts: dict[str, int] = {}
+        self._layer_counts_ts: float = 0
+        logger.info('MemoryManager initialized (relational=%s).', 'ok' if self._relational_available else 'disabled')
 
     @property
     def episodic(self) -> EpisodicMemory:
@@ -55,8 +102,23 @@ class MemoryManager:
         return self._semantic
 
     @property
-    def relational(self) -> RelationalMemory:
+    def relational(self) -> Optional[RelationalMemory]:
         return self._relational
+
+    def _refresh_layer_counts(self) -> None:
+        """Refresh cached counts every 60 seconds."""
+        now = time.monotonic()
+        if now - self._layer_counts_ts < 60:
+            return
+        self._layer_counts_ts = now
+        try:
+            self._layer_counts['episodic'] = self._episodic.count()
+        except Exception:
+            self._layer_counts['episodic'] = -1
+        try:
+            self._layer_counts['semantic'] = self._semantic.count()
+        except Exception:
+            self._layer_counts['semantic'] = -1
 
     def retrieve(
         self,
@@ -73,13 +135,17 @@ class MemoryManager:
             if layer not in VALID_LAYERS:
                 raise ValueError(f'Invalid layer: {layer}. Must be one of {VALID_LAYERS}')
 
+        # Refresh cached counts to skip empty layers
+        self._refresh_layer_counts()
+
         context = MemoryContext(query=query, layers_queried=layers)
 
         query_vector = None
         if ('episodic' in layers or 'semantic' in layers) and self._embed:
             query_vector = self._embed(query)
 
-        if 'episodic' in layers and query_vector:
+        # Skip episodic if collection is known-empty
+        if 'episodic' in layers and query_vector and self._layer_counts.get('episodic', -1) != 0:
             try:
                 results = self._episodic.retrieve(
                     query_vector=query_vector,
@@ -100,7 +166,8 @@ class MemoryManager:
             except Exception as e:
                 logger.error('Episodic retrieval failed: %s', e)
 
-        if 'semantic' in layers and query_vector:
+        # Skip semantic if collection is known-empty
+        if 'semantic' in layers and query_vector and self._layer_counts.get('semantic', -1) != 0:
             try:
                 results = self._semantic.search(
                     query_vector=query_vector,
@@ -120,7 +187,8 @@ class MemoryManager:
             except Exception as e:
                 logger.error('Semantic retrieval failed: %s', e)
 
-        if 'relational' in layers:
+        # Skip relational if circuit breaker tripped or Neo4j unavailable
+        if 'relational' in layers and self._relational_available and self._relational:
             try:
                 search_results = self._relational.search_entities(query, limit=top_k)
                 entities_data = []
@@ -138,7 +206,8 @@ class MemoryManager:
                     }
                 ]
             except Exception as e:
-                logger.error('Relational retrieval failed: %s', e)
+                logger.error('Relational retrieval failed, disabling for session: %s', e)
+                self._relational_available = False
 
         return context
 
@@ -236,7 +305,10 @@ class MemoryManager:
         return '--- MEMORY CONTEXT ---\n\n' + '\n\n'.join(sections) + '\n\n--- END MEMORY CONTEXT ---'
 
     def index_documents(self, directory: str, recursive: bool = True) -> dict:
-        return self._semantic.index_directory(directory, recursive=recursive)
+        stats = self._semantic.index_directory(directory, recursive=recursive)
+        # Invalidate count cache so new documents are found immediately
+        self._layer_counts_ts = 0
+        return stats
 
     def get_stats(self) -> dict:
         stats = {}
@@ -249,13 +321,17 @@ class MemoryManager:
         except Exception:
             stats['semantic_count'] = -1
         try:
-            stats['relational'] = self._relational.stats()
+            if self._relational_available and self._relational:
+                stats['relational'] = self._relational.stats()
+            else:
+                stats['relational'] = {'status': 'disabled'}
         except Exception:
             stats['relational'] = {}
         return stats
 
     def close(self) -> None:
-        self._relational.close()
+        if self._relational:
+            self._relational.close()
 
     def __enter__(self):
         return self

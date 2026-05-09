@@ -177,7 +177,8 @@ class IntentParser:
 
         if keyword_scores:
             top_score = max(keyword_scores.values())
-            if top_score >= 2.0 and len([s for s in keyword_scores.values() if s > 0]) == 1:
+            # Fast-path: skip LLM if we have a clear keyword match
+            if top_score >= 1.0 and len([s for s in keyword_scores.values() if s > 0]) == 1:
                 intent_name = max(keyword_scores, key=keyword_scores.get)
                 return Intent(
                     primary=intent_name,

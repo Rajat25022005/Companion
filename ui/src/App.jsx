@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import './App.css'
+import { RepoSelector } from './RepoSelector'
 
 const API = '/api'
 
@@ -194,6 +195,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [stagedFiles, setStagedFiles] = useState([])
   const [isUploading, setIsUploading] = useState(false)
+  const [showRepoSelector, setShowRepoSelector] = useState(false)
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
@@ -445,6 +447,7 @@ function App() {
             <h1>Companion</h1>
           </div>
           <div className="header-actions">
+            <button onClick={() => setShowRepoSelector(true)}>Index Repo</button>
             <button onClick={newSession}>New Session</button>
           </div>
         </div>
@@ -519,6 +522,18 @@ function App() {
           </div>
         </div>
       </div>
+      {showRepoSelector && (
+        <RepoSelector
+          onClose={() => setShowRepoSelector(false)}
+          onIndexed={(repoName, stats) => {
+            setMessages(prev => [...prev, {
+              role: 'assistant',
+              content: `Indexed **${repoName}** — ${stats.files_indexed} files, ${stats.chunks_total} chunks added to semantic memory.`,
+              files: [],
+            }])
+          }}
+        />
+      )}
     </div>
   )
 }

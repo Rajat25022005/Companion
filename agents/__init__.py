@@ -3,6 +3,7 @@ from agents.research_agent import ResearchAgent
 from agents.code_agent import CodeAgent
 from agents.writer_agent import WriterAgent
 from agents.doc_agent import DocAgent
+from agents.plan_agent import PlanAgent
 
 __all__ = [
     'BaseAgent',
@@ -12,4 +13,5 @@ __all__ = [
     'CodeAgent',
     'WriterAgent',
     'DocAgent',
+    'PlanAgent',
 ]

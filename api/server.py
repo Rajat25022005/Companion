@@ -322,6 +322,61 @@ async def list_files():
     return {'files': files}
 
 
+@app.get("/github/repos")
+async def list_github_repos():
+    """List user's GitHub repos using configured token."""
+    import os, httpx
+    token = os.environ.get("GITHUB_TOKEN", "")
+    headers = {"Accept": "application/vnd.github+json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    try:
+        r = httpx.get(
+            "https://api.github.com/user/repos",
+            headers=headers,
+            params={"sort": "updated", "per_page": 50, "type": "all"},
+            timeout=10,
+        )
+        return {"repos": r.json()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/github/index-repo")
+async def index_repo(request: dict):
+    """Clone and index a GitHub repo into semantic memory."""
+    import subprocess, tempfile, shutil
+    repo_url = request.get("clone_url")
+    repo_name = request.get("name", "repo")
+    if not repo_url:
+        raise HTTPException(status_code=400, detail="clone_url required")
+    if not _memory:
+        raise HTTPException(status_code=503, detail="Memory not available")
+    
+    # Add token to URL if available
+    import os
+    token = os.environ.get("GITHUB_TOKEN", "")
+    if token:
+        repo_url = repo_url.replace("https://", f"https://{token}@")
+    
+    clone_dir = None
+    try:
+        clone_dir = tempfile.mkdtemp(prefix=f"companion_{repo_name}_")
+        subprocess.run(
+            ["git", "clone", "--depth=1", repo_url, clone_dir],
+            capture_output=True, text=True, timeout=120, check=True
+        )
+        stats = _memory.index_documents(clone_dir, recursive=True)
+        return {"status": "indexed", "repo": repo_name, "stats": stats}
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(status_code=500, detail=f"Clone failed: {e.stderr}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if clone_dir:
+            shutil.rmtree(clone_dir, ignore_errors=True)
+
+
 @app.get('/health')
 async def health():
     return {'status': 'ok', 'version': '0.1.0'}

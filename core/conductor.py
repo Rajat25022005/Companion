@@ -1,5 +1,6 @@
 import json
 import logging
+import threading
 import time
 import uuid
 from typing import Optional
@@ -123,20 +124,23 @@ class Conductor:
             return planner_result.final_output
 
     def _store_turn(self, user_message: str, response: str) -> None:
+        """Store turn in memory in a background thread (fire-and-forget)."""
         if not self._memory:
             return
-        try:
-            self._memory.store(
-                turn={
-                    'role': 'user',
-                    'content': user_message,
-                    'response': response,
-                },
-                session_id=self._session_id,
-                turn_index=self._turn_index,
-            )
-        except Exception as e:
-            logger.error('Failed to store turn in memory: %s', e)
+        def _do_store():
+            try:
+                self._memory.store(
+                    turn={
+                        'role': 'user',
+                        'content': user_message,
+                        'response': response,
+                    },
+                    session_id=self._session_id,
+                    turn_index=self._turn_index,
+                )
+            except Exception as e:
+                logger.error('Failed to store turn in memory: %s', e)
+        threading.Thread(target=_do_store, daemon=True).start()
 
     def _is_simple_greeting(self, message: str) -> bool:
         greetings = {'hi', 'hello', 'hey', 'sup', 'yo', 'good morning', 'good evening', 'good afternoon'}
@@ -189,6 +193,9 @@ class Conductor:
         if event_callback:
             event_callback({'type': 'intent_parsed', 'intent': intent.model_dump()})
 
+        # Retrieve memory context ONCE for the whole pipeline
+        memory_context = self._retrieve_memory_context(user_message)
+
         if intent.requires_multi_agent:
             planner_result = self._task_planner.execute(
                 intent=intent,
@@ -196,6 +203,7 @@ class Conductor:
                 conversation_history=self._conversation_history[-6:],
                 event_callback=event_callback,
                 session_id=self._session_id,
+                extra_context=memory_context,
             )
             if event_callback:
                 event_callback({'type': 'synthesizing'})
@@ -207,6 +215,7 @@ class Conductor:
                 conversation_history=self._conversation_history[-6:],
                 event_callback=event_callback,
                 session_id=self._session_id,
+                extra_context=memory_context,
             )
             content = planner_result.final_output
 

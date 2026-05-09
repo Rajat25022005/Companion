@@ -41,7 +41,11 @@ class RelationalMemory:
         password: str = 'companion',
         database: str = 'neo4j',
     ):
-        self._driver = GraphDatabase.driver(uri, auth=(user, password))
+        self._driver = GraphDatabase.driver(
+            uri, auth=(user, password),
+            connection_timeout=3,  # Fail fast if Neo4j is unreachable
+            max_connection_pool_size=5,
+        )
         self._database = database
         self._ensure_constraints()
 
