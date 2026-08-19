@@ -1,0 +1,21 @@
+[package]
+name = "companion-agents"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+companion-domain.workspace = true
+companion-runtime.workspace = true
+companion-models.workspace = true
+companion-capabilities.workspace = true
+companion-cap.workspace = true
+companion-events.workspace = true
+companion-storage.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+tokio.workspace = true
+async-trait.workspace = true
+tracing.workspace = true
+thiserror.workspace = true

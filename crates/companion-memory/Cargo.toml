@@ -1,0 +1,23 @@
+[package]
+name = "companion-memory"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+companion-domain.workspace = true
+companion-events.workspace = true
+companion-storage.workspace = true
+companion-models.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+tokio.workspace = true
+async-trait.workspace = true
+tracing.workspace = true
+thiserror.workspace = true
+reqwest.workspace = true
+sha2.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

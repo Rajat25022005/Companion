@@ -1,0 +1,17 @@
+[package]
+name = "companion-storage"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+companion-domain.workspace = true
+companion-events.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+async-trait.workspace = true
+tokio.workspace = true
+sqlx.workspace = true
+tracing.workspace = true

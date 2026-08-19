@@ -1,0 +1,38 @@
+[package]
+name = "companion-api"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "companion-api"
+path = "src/main.rs"
+
+[dependencies]
+companion-domain.workspace = true
+companion-runtime.workspace = true
+companion-storage.workspace = true
+companion-models.workspace = true
+companion-capabilities.workspace = true
+companion-policy.workspace = true
+companion-observability.workspace = true
+companion-protocol.workspace = true
+companion-events.workspace = true
+companion-cap.workspace = true
+companion-agents.workspace = true
+companion-workflow.workspace = true
+companion-memory.workspace = true
+companion-context.workspace = true
+companion-skills.workspace = true
+companion-profile.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+tokio.workspace = true
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+tracing.workspace = true
+sqlx.workspace = true
+futures-util = "0.3"
+tokio-stream = "0.1"

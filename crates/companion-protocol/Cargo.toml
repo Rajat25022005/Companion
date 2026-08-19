@@ -1,0 +1,11 @@
+[package]
+name = "companion-protocol"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+companion-domain.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true

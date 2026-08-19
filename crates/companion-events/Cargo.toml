@@ -1,0 +1,13 @@
+[package]
+name = "companion-events"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+companion-domain.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+async-trait.workspace = true

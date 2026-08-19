@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: companion-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: companion
+      POSTGRES_USER: companion
+      POSTGRES_PASSWORD: companion_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U companion"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: companion-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+
+  api:
+    build:
+      context: ../../
+      dockerfile: deployments/docker/Dockerfile
+    container_name: companion-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgres://companion:companion_dev@postgres:5432/companion
+      OLLAMA_URL: http://ollama:11434
+      PORT: 8000
+      RUST_LOG: companion=info,tower_http=info
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:
+  ollama_models:

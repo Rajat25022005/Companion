@@ -1,0 +1,175 @@
+{
+  "manifest_version": "1.0.0",
+  "name": "companion",
+  "description": "Production service configuration for Companion platform",
+  "environment": "production",
+  "status": "active",
+  "version": "0.1.0",
+  "generated_at": "2026-01-01T00:00:00Z",
+  "services": [
+    {
+      "id": "companion-api",
+      "name": "api",
+      "type": "application",
+      "status": "active",
+      "image": "companion-api:0.1.0",
+      "build": {
+        "context": ".",
+        "dockerfile": "deployments/docker/Dockerfile"
+      },
+      "replicas": 1,
+      "container_name": "companion-api",
+      "restart_policy": "unless-stopped",
+      "ports": [
+        {
+          "host": 8000,
+          "container": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": {
+        "DATABASE_URL": "postgres://companion:companion_dev@postgres:5432/companion",
+        "OLLAMA_URL": "http://ollama:11434",
+        "PORT": "8000",
+        "RUST_LOG": "companion=info,tower_http=info"
+      },
+      "depends_on": [
+        {
+          "service": "postgres",
+          "condition": "service_healthy"
+        },
+        {
+          "service": "ollama",
+          "condition": "service_started"
+        }
+      ],
+      "healthcheck": {
+        "enabled": true,
+        "path": "/health",
+        "interval_seconds": 30,
+        "timeout_seconds": 5,
+        "retries": 3
+      },
+      "resources": {
+        "limits": {
+          "cpus": "1.0",
+          "memory": "1024M"
+        },
+        "reservations": {
+          "cpus": "0.25",
+          "memory": "256M"
+        }
+      }
+    },
+    {
+      "id": "companion-postgres",
+      "name": "postgres",
+      "type": "database",
+      "status": "active",
+      "image": "postgres:17",
+      "container_name": "companion-postgres",
+      "restart_policy": "unless-stopped",
+      "ports": [
+        {
+          "host": 5432,
+          "container": 5432,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": {
+        "POSTGRES_DB": "companion",
+        "POSTGRES_USER": "companion",
+        "POSTGRES_PASSWORD": "companion_dev"
+      },
+      "volumes": [
+        {
+          "name": "pgdata",
+          "mount_path": "/var/lib/postgresql/data"
+        }
+      ],
+      "healthcheck": {
+        "enabled": true,
+        "test": ["CMD-SHELL", "pg_isready -U companion"],
+        "interval_seconds": 5,
+        "timeout_seconds": 5,
+        "retries": 5
+      },
+      "resources": {
+        "limits": {
+          "cpus": "1.0",
+          "memory": "1024M"
+        },
+        "reservations": {
+          "cpus": "0.25",
+          "memory": "256M"
+        }
+      }
+    },
+    {
+      "id": "companion-ollama",
+      "name": "ollama",
+      "type": "model-runtime",
+      "status": "active",
+      "image": "ollama/ollama:latest",
+      "container_name": "companion-ollama",
+      "restart_policy": "unless-stopped",
+      "ports": [
+        {
+          "host": 11434,
+          "container": 11434,
+          "protocol": "tcp"
+        }
+      ],
+      "volumes": [
+        {
+          "name": "ollama_models",
+          "mount_path": "/root/.ollama"
+        }
+      ],
+      "resources": {
+        "limits": {
+          "cpus": "2.0",
+          "memory": "4096M"
+        },
+        "reservations": {
+          "cpus": "0.5",
+          "memory": "1024M"
+        }
+      }
+    }
+  ],
+  "volumes": [
+    {
+      "name": "pgdata",
+      "driver": "local"
+    },
+    {
+      "name": "ollama_models",
+      "driver": "local"
+    }
+  ],
+  "network": {
+    "name": "companion-net",
+    "driver": "bridge"
+  },
+  "workspace": {
+    "type": "cargo-workspace",
+    "members": [
+      "crates/companion-domain",
+      "crates/companion-events",
+      "crates/companion-storage",
+      "crates/companion-models",
+      "crates/companion-capabilities",
+      "crates/companion-policy",
+      "crates/companion-observability",
+      "crates/companion-protocol",
+      "crates/companion-runtime",
+      "crates/companion-cap",
+      "crates/companion-agents",
+      "crates/companion-workflow",
+      "crates/companion-memory",
+      "crates/companion-context",
+      "crates/companion-skills"
+    ]
+  }
+}

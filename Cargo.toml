@@ -1,0 +1,91 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/companion-domain",
+    "crates/companion-events",
+    "crates/companion-storage",
+    "crates/companion-models",
+    "crates/companion-capabilities",
+    "crates/companion-policy",
+    "crates/companion-observability",
+    "crates/companion-protocol",
+    "crates/companion-runtime",
+    "crates/companion-cap",
+    "crates/companion-agents",
+    "crates/companion-workflow",
+    "crates/companion-memory",
+    "crates/companion-context",
+    "crates/companion-skills",
+    "crates/companion-profile",
+    "crates/companion-rate-limiter",
+    "services/api",
+    "bins/companion-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/Rajat25022005/Companion"
+
+[workspace.dependencies]
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+
+# IDs and time
+uuid = { version = "1", features = ["v7", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+
+# HTTP
+reqwest = { version = "0.12", features = ["json"] }
+axum = "0.8"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+
+# Database
+sqlx = { version = "0.8", features = [
+    "runtime-tokio",
+    "postgres",
+    "uuid",
+    "chrono",
+    "json",
+    "migrate",
+] }
+
+# Observability
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+
+# Crypto
+sha2 = "0.10"
+
+# Testing & Utilities
+tempfile = "3"
+
+# Internal crates
+companion-domain = { path = "crates/companion-domain" }
+companion-events = { path = "crates/companion-events" }
+companion-storage = { path = "crates/companion-storage" }
+companion-models = { path = "crates/companion-models" }
+companion-capabilities = { path = "crates/companion-capabilities" }
+companion-policy = { path = "crates/companion-policy" }
+companion-observability = { path = "crates/companion-observability" }
+companion-protocol = { path = "crates/companion-protocol" }
+companion-runtime = { path = "crates/companion-runtime" }
+companion-cap = { path = "crates/companion-cap" }
+companion-agents = { path = "crates/companion-agents" }
+companion-workflow = { path = "crates/companion-workflow" }
+companion-memory = { path = "crates/companion-memory" }
+companion-context = { path = "crates/companion-context" }
+companion-skills = { path = "crates/companion-skills" }
+companion-profile = { path = "crates/companion-profile" }

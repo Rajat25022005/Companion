@@ -1,0 +1,25 @@
+[package]
+name = "companion-workflow"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+companion-domain.workspace = true
+companion-runtime.workspace = true
+companion-agents.workspace = true
+companion-cap.workspace = true
+companion-events.workspace = true
+companion-storage.workspace = true
+companion-models.workspace = true
+companion-capabilities.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+tokio.workspace = true
+async-trait.workspace = true
+tracing.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
