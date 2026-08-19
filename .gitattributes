@@ -1,0 +1,6 @@
+# Enforce standard LF line endings for all text files
+* text=auto eol=lf
+
+# GitHub Linguist Language overrides
+migrations/*.sql linguist-vendored=true
+services/api/src/dashboard.html linguist-detectable=true
