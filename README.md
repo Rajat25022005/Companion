@@ -6,100 +6,105 @@
 [![Tests](https://img.shields.io/badge/tests-100%25%20passing-brightgreen.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Companion** is a high-performance, deterministic, memory-safe agentic execution runtime written in Rust. Designed for production workloads, Companion combines strict contract enforcement, a 7-tier hierarchical memory engine, 8-stage context compilation with zero-cost codebase self-awareness, Human-in-the-Loop (HITL) safety gates, and cryptographic SHA-256 audit compliance.
+**Companion** is a deterministic, memory-safe agentic execution runtime written in Rust. Designed for enterprise production environments, Companion combines strict contract enforcement, a 7-tier hierarchical memory engine, 8-stage context compilation with zero-cost codebase self-awareness, Human-in-the-Loop (HITL) dual-control authorization gates, and cryptographic SHA-256 audit compliance.
 
 ---
 
-## 🏛️ System Architecture
+## System Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                COMPANION RUNTIME ARCHITECTURE                                    │
-├──────────────────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                                  │
-│  [ Enterprise Gateways & CLI ]                                                                   │
-│   ├── REST + Server-Sent Events (CRP Gateway)   ├── CLI (`companion run/goal/memory/skill/audit`)│
-│   ├── Web Dashboard UI (`http://localhost:8000`)├── Prometheus `/metrics` Real-time Exporter    │
-│                                                                                                  │
-│  [ ContextOS & Live Workspace Blueprint ]                                                        │
-│   ├── 8-Stage Context Compiler                  ├── Zero-Cost Live Codebase Self-Awareness Block │
-│   ├── Dynamic Budget Manager & Sensitivity Gate ├── Prompt Prefix Cache (Stable Hash Keys)       │
-│                                                                                                  │
-│  [ MemoryOS — 7 Hierarchical Tiers ]                                                             │
-│   ├── L0: Working Memory (Scratchpad)           ├── L4: Relational Knowledge Graph Store         │
-│   ├── L1: Session Store (Sliding Turn Window)   ├── L5: Procedural Skill Graph Storage           │
-│   ├── L2: Episodic Recorder (Execution Traces)  └── L6: Offline Dream Cycle Consolidator         │
-│   ├── L3: Semantic Embeddings & Vector Store                                                     │
-│                                                                                                  │
-│  [ Capabilities & Extensibility ]                                                                │
-│   ├── Filesystem (`read`, `write`, `list`)      ├── Gmail (`fetch_unread`, `create_draft`)       │
-│   ├── Process Execution (`process.execute`)     ├── Web Scraping (`web.fetch`, `extract_links`)  │
-│   ├── HITL Gated Actions (`gmail.send_reply`)   ├── Memory-Isolated WASM Sandbox (Fuel Budgeted) │
-│   └── Model Context Protocol (MCP) JSON-RPC 2.0 └── Rate Limiter (TokenBucket/SlidingWindow)    │
-│                                                                                                  │
-│  [ SkillOS & Self-Improvement ]                                                                  │
-│   ├── Multi-Version Immutable Skill Registry    ├── Trace Mining & Skill Synthesizer             │
-│   ├── Automated Safety & Regression Evaluator   └── Canary Controller & Auto-Promotion/Rollback  │
-│                                                                                                  │
-│  [ Security, Policy & Audit Ledger ]                                                             │
-│   ├── Regex Secret & PII Sanitizer / Redactor   ├── Multi-Tenant Workspace Chroot Isolation      │
-│   ├── Dual-Control HITL Approval Gate           └── Cryptographic SHA-256 Hash-Chained Ledger    │
-│                                                                                                  │
-└──────────────────────────────────────────────────────────────────────────────────────────────────┘
++--------------------------------------------------------------------------------------------------+
+|                                COMPANION RUNTIME ARCHITECTURE                                    |
++--------------------------------------------------------------------------------------------------+
+|                                                                                                  |
+|  [ Enterprise Gateways & CLI ]                                                                   |
+|   |-- REST + Server-Sent Events (CRP Gateway)   |-- CLI (`companion run/goal/memory/skill/audit`)|
+|   |-- Web Dashboard UI (`http://localhost:8000`)|-- Prometheus `/metrics` Real-time Exporter    |
+|                                                                                                  |
+|  [ ContextOS & Live Workspace Blueprint ]                                                        |
+|   |-- 8-Stage Context Compiler                  |-- Zero-Cost Live Codebase Self-Awareness Block |
+|   |-- Dynamic Budget Manager & Sensitivity Gate |-- Prompt Prefix Cache (Stable Hash Keys)       |
+|                                                                                                  |
+|  [ MemoryOS — 7 Hierarchical Tiers ]                                                             |
+|   |-- L0: Working Memory (Scratchpad)           |-- L4: Relational Knowledge Graph Store         |
+|   |-- L1: Session Store (Sliding Turn Window)   |-- L5: Procedural Skill Graph Storage           |
+|   |-- L2: Episodic Recorder (Execution Traces)  `-- L6: Offline Dream Cycle Consolidator         |
+|   |-- L3: Semantic Embeddings & Vector Store                                                     |
+|                                                                                                  |
+|  [ Capabilities & Extensibility ]                                                                |
+|   |-- Filesystem (`read`, `write`, `list`)      |-- Gmail (`fetch_unread`, `create_draft`)       |
+|   |-- Process Execution (`process.execute`)     |-- Web Scraping (`web.fetch`, `extract_links`)  |
+|   |-- HITL Gated Actions (`gmail.send_reply`)   |-- Memory-Isolated WASM Sandbox (Fuel Budgeted) |
+|   `-- Model Context Protocol (MCP) JSON-RPC 2.0 `-- Rate Limiter (TokenBucket/SlidingWindow)    |
+|                                                                                                  |
+|  [ SkillOS & Self-Improvement ]                                                                  |
+|   |-- Multi-Version Immutable Skill Registry    |-- Trace Mining & Skill Synthesizer             |
+|   |-- Automated Safety & Regression Evaluator   `-- Canary Controller & Auto-Promotion/Rollback  |
+|                                                                                                  |
+|  [ Security, Policy & Audit Ledger ]                                                             |
+|   |-- Regex Secret & PII Sanitizer / Redactor   |-- Multi-Tenant Workspace Chroot Isolation      |
+|   |-- Dual-Control HITL Approval Gate           `-- Cryptographic SHA-256 Hash-Chained Ledger    |
+|                                                                                                  |
++--------------------------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 📦 Workspace Crates (19 Crates)
+## Workspace Crates
+
+The codebase is organized into 19 modular, decoupled crates:
 
 | Crate | Path | Responsibility |
 |---|---|---|
-| `companion-domain` | `crates/companion-domain` | Core domain types: `TaskContract`, `TaskState`, `ToolResult`, `Message`, error models |
-| `companion-capabilities` | `crates/companion-capabilities` | Native built-ins (`filesystem`, `process`, `gmail`, `web`), WASM sandboxing, MCP 2.0 |
-| `companion-runtime` | `crates/companion-runtime` | Deterministic execution loop, contract compiler, self-healing loop, HITL gate |
-| `companion-context` | `crates/companion-context` | 8-stage ContextOS compiler, token budgeting, prompt caching, Live Workspace Blueprint |
-| `companion-memory` | `crates/companion-memory` | 7-tier MemoryOS (working, session, episodic, vector, knowledge graph, dream cycle) |
+| `companion-domain` | `crates/companion-domain` | Core domain types: `TaskContract`, `TaskState`, `ToolResult`, `Message`, and error models |
+| `companion-capabilities` | `crates/companion-capabilities` | Native built-ins (`filesystem`, `process`, `gmail`, `web`), WASM sandboxing, and MCP 2.0 |
+| `companion-runtime` | `crates/companion-runtime` | Deterministic execution loop, contract compiler, self-healing loop, and HITL gate |
+| `companion-context` | `crates/companion-context` | 8-stage ContextOS compiler, token budgeting, prompt caching, and Live Workspace Blueprint |
+| `companion-memory` | `crates/companion-memory` | 7-tier MemoryOS (working, session, episodic, vector, knowledge graph, and dream cycle) |
 | `companion-models` | `crates/companion-models` | Multi-provider LLM router (Ollama, Nvidia NIM, Anthropic, OpenAI) |
 | `companion-rate-limiter` | `crates/companion-rate-limiter` | Token bucket, sliding window log, and leaky bucket rate limiters |
-| `companion-skills` | `crates/companion-skills` | SkillOS: procedural execution, synthesis from traces, canary rollouts |
-| `companion-profile` | `crates/companion-profile` | User profile context, agent persona management, `SecretsVault` |
+| `companion-skills` | `crates/companion-skills` | SkillOS: procedural execution, synthesis from traces, and canary rollouts |
+| `companion-profile` | `crates/companion-profile` | User profile context, agent persona management, and `SecretsVault` |
 | `companion-agents` | `crates/companion-agents` | Actor-model `AgentTeam` with specialized roles (Architect, Engineer, Reviewer) |
-| `companion-workflow` | `crates/companion-workflow` | DAG multi-agent orchestration, milestone tracking, persistent checkpointing |
-| `companion-policy` | `crates/companion-policy` | `PolicyEvaluator`, PII & token redactor, tenant security enforcement |
-| `companion-observability` | `crates/companion-observability` | Cryptographic SHA-256 audit ledger, Prometheus metrics collector |
-| `companion-storage` | `crates/companion-storage` | PostgreSQL persistence (`PgEventStore`, `PgTaskStore`, migrations) |
+| `companion-workflow` | `crates/companion-workflow` | DAG multi-agent orchestration, milestone tracking, and persistent checkpointing |
+| `companion-policy` | `crates/companion-policy` | `PolicyEvaluator`, PII/secret token redactor, and tenant security enforcement |
+| `companion-observability` | `crates/companion-observability` | Cryptographic SHA-256 audit ledger and Prometheus metrics collector |
+| `companion-storage` | `crates/companion-storage` | PostgreSQL persistence (`PgEventStore`, `PgTaskStore`, and migrations) |
 | `companion-events` | `crates/companion-events` | Event-sourced `TaskEvent` structures and event store interfaces |
-| `companion-protocol` | `crates/companion-protocol` | Wire serialization protocols, CRP envelopes |
+| `companion-protocol` | `crates/companion-protocol` | Wire serialization protocols and CRP envelopes |
 | `companion-cap` | `crates/companion-cap` | Companion Agent Protocol (CAP) inter-agent messaging |
-| `companion-api` | `services/api` | Axum HTTP/SSE server, REST endpoints, real-time Web Dashboard (`:8000`) |
+| `companion-api` | `services/api` | Axum HTTP/SSE server, REST endpoints, and real-time Web Dashboard (`:8000`) |
 | `companion-cli` | `bins/companion-cli` | CLI binary (`companion run/goal/memory/audit/skill`) |
 
 ---
 
-## 🛠️ Built-in Capabilities
+## Built-in Capabilities
 
 Companion ships with 9 production built-in tools across 4 core domains:
 
-- **Filesystem**:
-  - `filesystem.read`: Read file contents safely with size limits.
-  - `filesystem.write`: Create or overwrite files within the workspace root.
-  - `filesystem.list`: List directory contents with recursive depth controls.
-- **Process**:
-  - `process.execute`: Execute shell commands with timeout enforcement and captured stdio.
-- **Gmail Automation**:
-  - `gmail.fetch_unread`: Fetch inbox messages with heuristic spam/newsletter filtering.
-  - `gmail.create_draft`: Create properly formatted reply drafts.
-  - `gmail.send_reply`: SMTP delivery protected by a **Human-in-the-Loop (HITL) dual-control approval gate**.
-- **Web Scraping & Extraction**:
-  - `web.fetch`: Fetch URLs, strip boilerplate (`<script>`, `<style>`, `<nav>`, `<footer>`), and convert the main body to clean Markdown.
-  - `web.extract_links`: Extract all anchor tags with URLs and labels, resolving relative links and tagging internal vs. external.
+### Filesystem
+- `filesystem.read`: Read file contents safely with bounded size limits.
+- `filesystem.write`: Create or overwrite files within the workspace root.
+- `filesystem.list`: List directory contents with recursive depth controls.
+
+### Process Execution
+- `process.execute`: Execute shell commands with timeout enforcement and captured stdio.
+
+### Gmail Automation
+- `gmail.fetch_unread`: Fetch inbox messages with heuristic spam and newsletter filtering.
+- `gmail.create_draft`: Create structured reply drafts.
+- `gmail.send_reply`: SMTP delivery protected by a **Human-in-the-Loop (HITL) dual-control approval gate**.
+
+### Web Scraping and Extraction
+- `web.fetch`: Fetch URLs, strip boilerplate elements (`<script>`, `<style>`, `<nav>`, `<footer>`), and convert the main body to clean Markdown.
+- `web.extract_links`: Extract all anchor tags with URLs and labels, resolving relative links and identifying internal versus external destinations.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Launch Infrastructure
-Start PostgreSQL with vector support:
+Start PostgreSQL with vector extensions:
 ```bash
 docker compose -f deployments/docker/docker-compose.yml up -d
 ```
@@ -109,9 +114,9 @@ Copy the example vault configuration:
 ```bash
 cp config/secrets.toml.example config/secrets.toml
 ```
-Configure your database URL and model provider keys (e.g. Ollama, Nvidia, OpenAI).
+Configure your database URL and model provider keys (e.g., Ollama, Nvidia, OpenAI).
 
-### 3. Run the API Gateway & Web Dashboard
+### 3. Run the API Gateway and Web Dashboard
 ```bash
 cargo run -p companion-api
 ```
@@ -119,7 +124,7 @@ Open **[http://localhost:8000](http://localhost:8000)** in your browser to acces
 
 ---
 
-## 💻 CLI Usage
+## CLI Usage
 
 Companion provides a unified CLI for all runtime and memory subsystems:
 
@@ -146,7 +151,7 @@ cargo run -p companion-cli -- audit verify
 
 ---
 
-## 📡 HTTP & SSE API Reference
+## HTTP and SSE API Reference
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -165,7 +170,7 @@ cargo run -p companion-cli -- audit verify
 
 ---
 
-## 🧪 Testing & Verification
+## Testing and Verification
 
 Run the comprehensive test suite across all 19 workspace crates:
 
@@ -175,6 +180,18 @@ cargo test --workspace
 
 ---
 
-## 📄 License
+## Security
+
+Please review [SECURITY.md](SECURITY.md) for vulnerability disclosure procedures, secret isolation architecture, and Human-in-the-Loop dual-control safety policies.
+
+---
+
+## Contributing
+
+Please review [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, coding conventions, and contribution guidelines.
+
+---
+
+## License
 
 Licensed under the [MIT License](LICENSE).
