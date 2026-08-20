@@ -42,17 +42,21 @@ impl ModelRouter {
 
     /// Route a request to the appropriate provider.
     pub async fn route(&self, request: ModelRequest) -> Result<ModelResponse, ModelError> {
-        let provider_name = self
-            .model_to_provider
-            .get(&request.model)
-            .or(self.default_provider.as_ref())
-            .ok_or_else(|| ModelError::ModelNotFound {
+        let provider_name = if let Some(p) = self.model_to_provider.get(&request.model) {
+            p
+        } else if (request.model.starts_with("gemini") || request.model.starts_with("google/")) && self.providers.contains_key("gemini") {
+            "gemini"
+        } else if (request.model.starts_with("nvidia") || request.model.starts_with("meta/") || request.model.starts_with("mistralai/")) && self.providers.contains_key("nvidia") {
+            "nvidia"
+        } else {
+            self.default_provider.as_deref().ok_or_else(|| ModelError::ModelNotFound {
                 model: request.model.clone(),
-            })?;
+            })?
+        };
 
         let provider = self.providers.get(provider_name).ok_or_else(|| {
             ModelError::ProviderUnavailable {
-                provider: provider_name.clone(),
+                provider: provider_name.to_string(),
             }
         })?;
 

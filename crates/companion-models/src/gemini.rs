@@ -26,8 +26,12 @@ impl GeminiProvider {
             api_key: api_key.into(),
             base_url: "https://generativelanguage.googleapis.com/v1beta".into(),
             models: vec![
+                "gemini-3.7-flash".into(),
                 "gemini-2.5-flash".into(),
                 "gemini-2.5-pro".into(),
+                "gemini-2.0-flash".into(),
+                "gemini-1.5-flash".into(),
+                "gemini-1.5-pro".into(),
             ],
         }
     }
@@ -106,15 +110,24 @@ impl ModelProvider for GeminiProvider {
     }
 
     async fn generate(&self, request: ModelRequest) -> Result<ModelResponse, ModelError> {
-        let model = &request.model;
+        let effective_model = if request.model == "default" || request.model == "gemini" {
+            self.models.first().cloned().unwrap_or_else(|| "gemini-3.7-flash".into())
+        } else if let Some(stripped) = request.model.strip_prefix("gemini/") {
+            stripped.to_string()
+        } else if let Some(stripped) = request.model.strip_prefix("google/") {
+            stripped.to_string()
+        } else {
+            request.model.clone()
+        };
+
         let url = format!(
             "{}/models/{}:generateContent?key={}",
-            self.base_url, model, self.api_key
+            self.base_url, effective_model, self.api_key
         );
 
         let gemini_req = self.build_request(&request);
 
-        debug!(provider = "gemini", model = %model, "sending request");
+        debug!(provider = "gemini", model = %effective_model, "sending request");
 
         let response = self
             .client
@@ -195,7 +208,7 @@ impl ModelProvider for GeminiProvider {
         });
 
         Ok(ModelResponse {
-            model: model.clone(),
+            model: effective_model,
             content,
             tool_calls,
             usage,

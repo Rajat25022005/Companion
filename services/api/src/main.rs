@@ -99,14 +99,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     model_router.register(ollama);
 
+    let default_model_setting = profile_manager
+        .secrets()
+        .resolve_handle("default_model")
+        .or_else(|| std::env::var("DEFAULT_MODEL").ok())
+        .unwrap_or_else(|| "gemini-3.7-flash".into());
+
+    let mut default_provider = "ollama";
+
     if let Some(gemini_key) = profile_manager
         .secrets()
         .resolve_handle("gemini_api_key")
         .or_else(|| std::env::var("GEMINI_API_KEY").ok())
     {
         if !gemini_key.trim().is_empty() {
-            let gemini = Arc::new(GeminiProvider::new(gemini_key));
+            let mut models = vec![
+                default_model_setting.clone(),
+                "gemini-3.7-flash".into(),
+                "gemini-2.5-flash".into(),
+                "gemini-2.5-pro".into(),
+                "gemini-2.0-flash".into(),
+                "gemini-1.5-flash".into(),
+                "gemini-1.5-pro".into(),
+            ];
+            models.dedup();
+            let gemini = Arc::new(GeminiProvider::new(gemini_key).with_models(models));
             model_router.register(gemini);
+            if default_model_setting.starts_with("gemini") || default_model_setting.starts_with("google/") || default_model_setting == "default" {
+                default_provider = "gemini";
+            }
         }
     }
 
@@ -118,10 +139,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if !nvidia_key.trim().is_empty() {
             let nvidia = Arc::new(NvidiaProvider::new(nvidia_key));
             model_router.register(nvidia);
+            if default_model_setting.starts_with("nvidia") || default_model_setting.starts_with("meta/") || default_model_setting.starts_with("mistralai/") {
+                default_provider = "nvidia";
+            }
         }
     }
 
-    model_router.set_default("ollama");
+    model_router.set_default(default_provider);
+    info!(default_provider = %default_provider, default_model = %default_model_setting, "Configured model router");
     let model_router = Arc::new(model_router);
 
     // Initialize stores
